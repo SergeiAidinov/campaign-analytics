@@ -19,28 +19,21 @@ public class FileController {
 		this.dataStore = dataStore;
 	}
 
-	@Operation(summary = "Upload actions file")
-	@PostMapping(value = "/actions/upload", consumes = "multipart/form-data")
-	public ResponseEntity<String> uploadActions(@RequestParam("file") MultipartFile file) {
-	    dataStore.collectDataFromEventFileAsync(file)
-	            .exceptionally(ex -> {
-	                System.err.println("Ошибка: " + ex.getMessage());
-	                return null;
-	            });
-
-	    return ResponseEntity.ok("Файл принят. Парсинг запущен в фоне.");
+	@Operation(summary = "Upload events file")
+	@PostMapping(value = "/events/upload", consumes = "multipart/form-data")
+	public ResponseEntity<String> uploadEvents(
+	        @RequestParam("file") MultipartFile file) {
+	    dataStore.loadEventsAsync(file);
+	    return ResponseEntity.accepted()
+	            .body("Events file accepted. Parsing started.");
 	}
-	
-	@Operation(summary = "Upload views file")
-	@PostMapping(value = "/views/upload", consumes = "multipart/form-data")
-	public ResponseEntity<String> uploadViews(
-	        @RequestParam("file") MultipartFile file
-	) {
-		 dataStore.collectDataFromViewsFileAsync(file)
-         .exceptionally(ex -> {
-             System.err.println("Ошибка: " + ex.getMessage());
-             return null;
-         });
-	    return ResponseEntity.ok("Views file received: " + file.getOriginalFilename());
+
+	@Operation(summary = "Upload impressions file")
+	@PostMapping(value = "/impressions/upload", consumes = "multipart/form-data")
+	public ResponseEntity<String> uploadImpressions(
+	        @RequestParam("file") MultipartFile file) {
+	    dataStore.loadImpressionsAsync(file);
+	    return ResponseEntity.accepted()
+	            .body("Impressions file accepted. Parsing started.");
 	}
 }

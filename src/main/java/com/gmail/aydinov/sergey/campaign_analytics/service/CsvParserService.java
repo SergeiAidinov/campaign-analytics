@@ -1,30 +1,75 @@
 package com.gmail.aydinov.sergey.campaign_analytics.service;
 
+import com.gmail.aydinov.sergey.campaign_analytics.model.Event;
+import com.gmail.aydinov.sergey.campaign_analytics.model.Impression;
 import com.opencsv.CSVReader;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.io.FileReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
 public class CsvParserService {
 
-    public Map<String, Map<String, Long>> parseEvents(String filePath) throws Exception {
-        Map<String, Map<String, Long>> uidToEvents = new HashMap<>();
-        try (CSVReader reader = new CSVReader(new FileReader(filePath))) {
+    private final DateTimeFormatter formatter =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    public Map<String, Impression> parseImpressions(MultipartFile file) throws Exception {
+        Map<String, Impression> impressions = new HashMap<>();
+        try (CSVReader reader = new CSVReader(
+                new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
             reader.readNext(); // header
             String[] line;
             while ((line = reader.readNext()) != null) {
-                if (line.length < 2) continue;
-                String uid = line[0].trim();
-                String tag = line[1].trim();
-                uidToEvents.computeIfAbsent(uid, k -> new HashMap<>())
-                        .merge(tag, 1L, Long::sum);
+                if (line.length < 10) {
+                    continue;
+                }
+                String uid = line[1].trim();
+                Impression impression = new Impression(
+                        uid,
+                        LocalDateTime.parse(line[0].trim(), formatter),
+                        Integer.parseInt(line[2]),
+                        Integer.parseInt(line[3]),
+                        Integer.parseInt(line[4]),
+                        line[5].trim(),
+                        line[6].trim(),
+                        line[7].trim(),
+                        line[8].trim(),
+                        line[9].trim()
+                );
+                impressions.put(uid, impression);
             }
         }
-        return uidToEvents;
+        return impressions;
     }
 
-    // Можно добавить метод для парсинга X.csv, если нужно
+    public Map<String, List<Event>> parseEvents(MultipartFile file) throws Exception {
+        Map<String, List<Event>> eventsByUid = new HashMap<>();
+        try (CSVReader reader = new CSVReader(
+                new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
+            reader.readNext(); // header
+            String[] line;
+            while ((line = reader.readNext()) != null) {
+                if (line.length < 2) {
+                    continue;
+                }
+                String uid = line[0].trim();
+                Event event = new Event(
+                        uid,
+                        line[1].trim()
+                );
+                eventsByUid
+                        .computeIfAbsent(uid, ignored -> new ArrayList<>())
+                        .add(event);
+            }
+        }
+        return eventsByUid;
+    }
 }

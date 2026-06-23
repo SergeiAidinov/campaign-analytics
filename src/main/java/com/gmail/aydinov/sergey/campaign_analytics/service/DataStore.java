@@ -1,158 +1,97 @@
 package com.gmail.aydinov.sergey.campaign_analytics.service;
 
-import com.opencsv.CSVReader;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.FileReader;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
+import com.gmail.aydinov.sergey.campaign_analytics.exception.DataNotReadyException;
+import com.gmail.aydinov.sergey.campaign_analytics.model.Event;
+import com.gmail.aydinov.sergey.campaign_analytics.model.Impression;
 
 @Component
 public class DataStore {
 
-    private final CsvParserService csvParserService;
+	private volatile Map<String, Impression> impressionsByUid = Map.of();
+	private volatile Map<String, List<Event>> eventsByUid = Map.of();
+	
+	private final CsvParserService csvParserService;
+	private final AtomicBoolean impressionsLoading = new AtomicBoolean(false);
+	private final AtomicBoolean eventsLoading = new AtomicBoolean(false);
 
-    // Основные хранилища
-    private final Map<Object, Aggregate> daily = new HashMap<>();
-    private final Map<Object, Aggregate> byMmDma = new HashMap<>();
-    private final Map<Object, Aggregate> bySiteId = new HashMap<>();
+	public DataStore(CsvParserService csvParserService) {
+		this.csvParserService = csvParserService;
+	}
 
-    private final Map<String, Map<String, Long>> uidToEvents = new HashMap<>();
+	public CompletableFuture<Void> loadImpressionsAsync(MultipartFile file) {
 
-    public DataStore(CsvParserService csvParserService) {
-        this.csvParserService = csvParserService;
-    }
+	    if (!impressionsLoading.compareAndSet(false, true)) {
+	        throw new DataNotReadyException("Impressions are already loading");
+	    }
 
-    // ===================== EVENTS (y.csv) =====================
-    public CompletableFuture<String> collectDataFromEventFileAsync(MultipartFile file) {
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                if (file.isEmpty()) throw new IllegalArgumentException("Файл пустой");
+	    return CompletableFuture.runAsync(() -> {
+	        try {
 
-                Path tempFile = Files.createTempFile("events", ".csv");
-                try {
-                    Files.copy(file.getInputStream(), tempFile, StandardCopyOption.REPLACE_EXISTING);
+	            if (file.isEmpty()) {
+	                throw new IllegalArgumentException("Impressions file is empty");
+	            }
+	            impressionsByUid =csvParserService.parseImpressions(file);;
+	            System.out.println("Loaded impressions: " + impressionsByUid.size());
+	        } catch (Exception e) {
+	            throw new RuntimeException(e);
+	        } finally {
+	            impressionsLoading.set(false); 
+	        }
+	    });
+	}
 
-                    var parsed = csvParserService.parseEvents(tempFile.toString());
+	public CompletableFuture<Void> loadEventsAsync(MultipartFile file) {
 
-                    synchronized (uidToEvents) {
-                        uidToEvents.clear();
-                        uidToEvents.putAll(parsed);
-                    }
+	    if (!eventsLoading.compareAndSet(false, true)) {
+	        throw new DataNotReadyException("Events are already loading");
+	    }
 
-                    String msg = "✅ События загружены: " + parsed.size() + " uid";
-                    System.out.println(msg);
-                    return msg;
-                } finally {
-                    Files.deleteIfExists(tempFile);
-                }
-            } catch (Exception e) {
-                String err = "❌ Ошибка событий: " + e.getMessage();
-                System.err.println(err);
-                throw new RuntimeException(err, e);
-            }
-        });
-    }
+	    return CompletableFuture.runAsync(() -> {
+	        try {
 
-    // ===================== VIEWS / IMPRESSIONS (X.csv) =====================
-    public CompletableFuture<String> collectDataFromViewsFileAsync(MultipartFile file) {
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                if (file.isEmpty()) throw new IllegalArgumentException("Файл пустой");
+	            if (file.isEmpty()) {
+	                throw new IllegalArgumentException("Events file is empty");
+	            }
+	            eventsByUid =csvParserService.parseEvents(file);;
+	            System.out.println("Loaded events: " + eventsByUid.size());
+	        } catch (Exception e) {
+	            throw new RuntimeException(e);
+	        } finally {
+	            eventsLoading.set(false);
+	        }
+	    });
+	}
 
-                Path tempFile = Files.createTempFile("views", ".csv");
-                try {
-                    Files.copy(file.getInputStream(), tempFile, StandardCopyOption.REPLACE_EXISTING);
+	public Map<String, Impression> getImpressionsByUid() {
+	    return Collections.unmodifiableMap(impressionsByUid);
+	}
 
-                    var stats = parseAndBuildAggregates(tempFile.toString());
+	public Map<String, List<Event>> getEventsByUid() {
+	    return Collections.unmodifiableMap(eventsByUid);
+	}
 
-                    String msg = String.format("✅ Показы загружены: %s | Дней: %d | mm_dma: %d | site_id: %d",
-                            file.getOriginalFilename(), stats.dailyCount, stats.mmDmaCount, stats.siteIdCount);
-                    System.out.println(msg);
-                    return msg;
-                } finally {
-                    Files.deleteIfExists(tempFile);
-                }
-            } catch (Exception e) {
-                String err = "❌ Ошибка показов: " + e.getMessage();
-                System.err.println(err);
-                throw new RuntimeException(err, e);
-            }
-        });
-    }
+	public Optional<Impression> getImpression(String uid) {
+	    return Optional.ofNullable(impressionsByUid.get(uid));
+	}
 
-    private Stats parseAndBuildAggregates(String filePath) throws Exception {
-        Stats stats = new Stats();
+	public List<Event> getEvents(String uid) {
+	    return eventsByUid.getOrDefault(uid, List.of());
+	}
 
-        try (CSVReader reader = new CSVReader(new FileReader(filePath))) {
-            reader.readNext(); // header
-
-            String[] line;
-            while ((line = reader.readNext()) != null) {
-                if (line.length < 10) continue;
-
-                int fcImpChk = Integer.parseInt(line[2]);
-                if (fcImpChk < 0) continue;
-
-                LocalDate date = LocalDate.parse(line[0].substring(0, 10));
-                String uid = line[1].trim();
-                String mmDma = line[5].trim();
-                String siteId = line[9].trim();
-
-                Map<String, Long> userEvents = uidToEvents.getOrDefault(uid, Map.of());
-
-                updateAggregate(daily, date, userEvents);
-                updateAggregate(byMmDma, mmDma, userEvents);
-                updateAggregate(bySiteId, siteId, userEvents);
-
-                stats.dailyCount = daily.size();
-                stats.mmDmaCount = byMmDma.size();
-                stats.siteIdCount = bySiteId.size();
-            }
-        }
-        return stats;
-    }
-
-    private void updateAggregate(Map<Object, Aggregate> targetMap, Object key, Map<String, Long> userEvents) {
-        Aggregate agg = targetMap.computeIfAbsent(key, k -> new Aggregate());
-        agg.impressions++;
-
-        userEvents.forEach((tag, count) ->
-                agg.eventsByTag.merge(tag, count, Long::sum));
-    }
-
-    // ===================== Геттеры =====================
-    public Map<String, Map<String, Long>> getUidToEvents() {
-        return new HashMap<>(uidToEvents);
-    }
-
-    public Map<Object, Aggregate> getDaily() {
-        return new HashMap<>(daily);
-    }
-
-    public Map<Object, Aggregate> getByMmDma() {
-        return new HashMap<>(byMmDma);
-    }
-
-    public Map<Object, Aggregate> getBySiteId() {
-        return new HashMap<>(bySiteId);
-    }
-
-    // ===================== Внутренние классы =====================
-    public static class Aggregate {
-        public long impressions = 0;
-        public Map<String, Long> eventsByTag = new HashMap<>();
-    }
-
-    private static class Stats {
-        int dailyCount = 0;
-        int mmDmaCount = 0;
-        int siteIdCount = 0;
-    }
+	public boolean isReady() {
+	    return !impressionsLoading.get()
+	            && !eventsLoading.get()
+	            && !impressionsByUid.isEmpty()
+	            && !eventsByUid.isEmpty();
+	}
 }
