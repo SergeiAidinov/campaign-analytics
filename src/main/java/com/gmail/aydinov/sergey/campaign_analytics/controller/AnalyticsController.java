@@ -14,7 +14,6 @@ import com.gmail.aydinov.sergey.campaign_analytics.dto.AggregationDto;
 import com.gmail.aydinov.sergey.campaign_analytics.dto.TimeSeriesDto;
 import com.gmail.aydinov.sergey.campaign_analytics.interfaces.CampaignMetricsService;
 import com.gmail.aydinov.sergey.campaign_analytics.model.EventType;
-import com.gmail.aydinov.sergey.campaign_analytics.service.CampaignMetricsServiceImpl;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

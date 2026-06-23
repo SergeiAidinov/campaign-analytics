@@ -11,11 +11,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.gmail.aydinov.sergey.campaign_analytics.exception.DataNotReadyException;
+import com.gmail.aydinov.sergey.campaign_analytics.interfaces.DataStore;
 import com.gmail.aydinov.sergey.campaign_analytics.model.Event;
 import com.gmail.aydinov.sergey.campaign_analytics.model.Impression;
 
 @Component
-public class DataStore {
+public class DataStoreImpl implements DataStore {
 
 	private volatile Map<String, Impression> impressionsByUid = Map.of();
 	private volatile Map<String, List<Event>> eventsByUid = Map.of();
@@ -24,7 +25,7 @@ public class DataStore {
 	private final AtomicBoolean impressionsLoading = new AtomicBoolean(false);
 	private final AtomicBoolean eventsLoading = new AtomicBoolean(false);
 
-	public DataStore(CsvParserService csvParserService) {
+	public DataStoreImpl(CsvParserService csvParserService) {
 		this.csvParserService = csvParserService;
 	}
 
@@ -72,19 +73,19 @@ public class DataStore {
 	    });
 	}
 
-	public Map<String, Impression> getImpressionsByUid() {
+	public Map<String, Impression> getAllImpressions() {
 	    return Collections.unmodifiableMap(impressionsByUid);
 	}
 
-	public Map<String, List<Event>> getEventsByUid() {
+	public Map<String, List<Event>> getAllEvents() {
 	    return Collections.unmodifiableMap(eventsByUid);
 	}
 
-	public Optional<Impression> getImpression(String uid) {
+	public Optional<Impression> getImpressionByUid(String uid) {
 	    return Optional.ofNullable(impressionsByUid.get(uid));
 	}
 
-	public List<Event> getEvents(String uid) {
+	public List<Event> getEventsByUid(String uid) {
 	    return eventsByUid.getOrDefault(uid, List.of());
 	}
 

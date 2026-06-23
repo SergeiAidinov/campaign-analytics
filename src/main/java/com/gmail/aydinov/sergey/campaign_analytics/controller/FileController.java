@@ -6,7 +6,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.gmail.aydinov.sergey.campaign_analytics.service.DataStore;
+import com.gmail.aydinov.sergey.campaign_analytics.interfaces.DataStore;
+
 
 @Tag(name = "File API")
 @RestController
