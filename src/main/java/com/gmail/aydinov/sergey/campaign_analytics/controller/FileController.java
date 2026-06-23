@@ -6,17 +6,29 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.gmail.aydinov.sergey.campaign_analytics.service.DataStore;
+
 @Tag(name = "File API")
 @RestController
 @RequestMapping("/files")
 public class FileController {
+	
+	private final DataStore dataStore;
+	
+	public FileController(DataStore dataStore) {
+		this.dataStore = dataStore;
+	}
 
 	@Operation(summary = "Upload actions file")
 	@PostMapping(value = "/actions/upload", consumes = "multipart/form-data")
-	public ResponseEntity<String> uploadActions(
-	        @RequestParam("file") MultipartFile file
-	) {
-	    return ResponseEntity.ok("Actions file received: " + file.getOriginalFilename());
+	public ResponseEntity<String> uploadActions(@RequestParam("file") MultipartFile file) {
+	    dataStore.collectDataFromEventFileAsync(file)
+	            .exceptionally(ex -> {
+	                System.err.println("Ошибка: " + ex.getMessage());
+	                return null;
+	            });
+
+	    return ResponseEntity.ok("Файл принят. Парсинг запущен в фоне.");
 	}
 	
 	@Operation(summary = "Upload views file")
@@ -24,6 +36,11 @@ public class FileController {
 	public ResponseEntity<String> uploadViews(
 	        @RequestParam("file") MultipartFile file
 	) {
+		 dataStore.collectDataFromViewsFileAsync(file)
+         .exceptionally(ex -> {
+             System.err.println("Ошибка: " + ex.getMessage());
+             return null;
+         });
 	    return ResponseEntity.ok("Views file received: " + file.getOriginalFilename());
 	}
 }

@@ -10,7 +10,7 @@ import com.gmail.aydinov.sergey.campaign_analytics.dto.TimeSeriesDto;
 
 @Service
 public class CampaignService {
-
+	
 	public List<AggregationDto> getAggregationByMmDma(List<String> eventTypes, LocalDate from, LocalDate to) {
 		// TODO Auto-generated method stub
 		return null;
