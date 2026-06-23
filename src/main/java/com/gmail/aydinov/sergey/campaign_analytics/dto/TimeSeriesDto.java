@@ -1,0 +1,5 @@
+package com.gmail.aydinov.sergey.campaign_analytics.dto;
+
+public class TimeSeriesDto {
+
+}
