@@ -1,0 +1,6 @@
+reg_time,uid,fc_imp_chk,fc_time_chk,utmtr,mm_dma,osName,model,hardware,site_id
+2021-07-21 10:15:00,00000000-0000-0001-0000-000000000001,0,7,2,530,iOS,iPhone XR,Mobile Phone,siteA
+2021-07-21 11:20:00,00000000-0000-0001-0000-000000000002,1,6,3,640,Android,Samsung S10,Mobile Phone,siteA
+2021-07-21 12:45:00,00000000-0000-0001-0000-000000000003,2,5,4,530,iOS,iPhone 12,Mobile Phone,siteB
+2021-07-22 09:10:00,00000000-0000-0001-0000-000000000004,0,7,1,640,Android,Pixel 5,Mobile Phone,siteA
+2021-07-22 14:30:00,00000000-0000-0001-0000-000000000005,3,4,5,530,iOS,iPhone XR,Mobile Phone,siteB

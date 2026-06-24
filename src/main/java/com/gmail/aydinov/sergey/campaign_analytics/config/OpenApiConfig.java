@@ -1,4 +1,4 @@
-package com.gmail.aydinov.sergey.campaign_analytics.controller;
+package com.gmail.aydinov.sergey.campaign_analytics.config;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;

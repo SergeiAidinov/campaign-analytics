@@ -1,0 +1,117 @@
+package com.gmail.aydinov.sergey.campaign_analytics.service;
+
+import java.time.LocalDate;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.gmail.aydinov.sergey.campaign_analytics.exception.DataNotReadyException;
+import com.gmail.aydinov.sergey.campaign_analytics.interfaces.DataStore;
+import com.gmail.aydinov.sergey.campaign_analytics.model.Event;
+import com.gmail.aydinov.sergey.campaign_analytics.model.EventType;
+import com.gmail.aydinov.sergey.campaign_analytics.model.Impression;
+
+@Component
+public class DataStoreImpl implements DataStore {
+
+	private volatile SortedMap<LocalDate, List<Impression>> impressionsByDate = new TreeMap<LocalDate, List<Impression>>();
+	private volatile Map<String, List<Event>> eventsByUid = Map.of();
+	
+	private final CsvParserService csvParserService;
+	private final AtomicBoolean impressionsLoading = new AtomicBoolean(false);
+	private final AtomicBoolean eventsLoading = new AtomicBoolean(false);
+
+	public DataStoreImpl(CsvParserService csvParserService) {
+		this.csvParserService = csvParserService;
+	}
+
+	public CompletableFuture<Void> loadImpressionsAsync(MultipartFile file) {
+
+	    if (!impressionsLoading.compareAndSet(false, true)) {
+	        throw new DataNotReadyException("Impressions are already loading");
+	    }
+
+	    return CompletableFuture.runAsync(() -> {
+	        try {
+
+	            if (file.isEmpty()) {
+	                throw new IllegalArgumentException("Impressions file is empty");
+	            }
+	            impressionsByDate = csvParserService.parseImpressions(file);;
+	        } catch (Exception e) {
+	            throw new RuntimeException(e);
+	        } finally {
+	            impressionsLoading.set(false); 
+	        }
+	    });
+	}
+
+	public CompletableFuture<Void> loadEventsAsync(MultipartFile file) {
+
+	    if (!eventsLoading.compareAndSet(false, true)) {
+	        throw new DataNotReadyException("Events are already loading");
+	    }
+
+	    return CompletableFuture.runAsync(() -> {
+	        try {
+
+	            if (file.isEmpty()) {
+	                throw new IllegalArgumentException("Events file is empty");
+	            }
+	            eventsByUid =csvParserService.parseEvents(file);;
+	        } catch (Exception e) {
+	            throw new RuntimeException(e);
+	        } finally {
+	            eventsLoading.set(false);
+	        }
+	    });
+	}
+
+	public SortedMap<LocalDate, List<Impression>> getAllImpressions() {
+	    return impressionsByDate;
+	}
+
+	public Map<String, List<Event>> getAllEvents() {
+	    return Collections.unmodifiableMap(eventsByUid);
+	}
+
+//	public Optional<Impression> getImpressionByUid(String uid) {
+//	    return Optional.ofNullable(impressionsByUid.get(uid));
+//	}
+
+	public List<Event> getEventsByUid(String uid) {
+	    return eventsByUid.getOrDefault(uid, List.of());
+	}
+
+	public boolean isReady() {
+	    return !impressionsLoading.get()
+	            && !eventsLoading.get()
+	            && !impressionsByDate.isEmpty()
+	            && !eventsByUid.isEmpty();
+	}
+
+	@Override
+	public List<Event> getEventsOfUidsAndTypes(Set<String> uids, List<EventType> types) {
+	    
+		Set<String> typeSet = types.stream()
+	            .map(EventType::name)
+	            .collect(Collectors.toSet());
+	    
+		return eventsByUid.entrySet().stream()
+	            .filter(entry -> uids.contains(entry.getKey()))
+	            .flatMap(entry -> entry.getValue().stream())
+	            .filter(event -> typeSet.contains(event.tag()))
+	            .toList();
+	}
+
+	
+}
