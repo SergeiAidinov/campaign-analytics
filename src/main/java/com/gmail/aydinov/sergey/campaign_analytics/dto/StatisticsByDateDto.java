@@ -4,6 +4,7 @@ import java.time.LocalDate;
 
 public record StatisticsByDateDto(
         LocalDate date,
+        int impressionsCount,
         double ctr,
         double evpm
 ) {}

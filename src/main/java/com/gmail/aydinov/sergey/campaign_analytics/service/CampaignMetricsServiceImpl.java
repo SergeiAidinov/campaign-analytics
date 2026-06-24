@@ -32,7 +32,7 @@ public class CampaignMetricsServiceImpl implements CampaignMetricsService {
 	@Override
 	public List<StatisticsByDateDto> getTimeSeries(List<EventType> eventTypes, LocalDate from, LocalDate to) {
 		
-		SortedMap<LocalDate, List<Impression>> selectedImpressions = dataStore.getAllImpressions().subMap(from, to);
+		SortedMap<LocalDate, List<Impression>> selectedImpressions = dataStore.getAllImpressions().subMap(from, to.plusDays(1));
 		
 		Map<LocalDate, List<Impression>> impressionsByDay = selectedImpressions.values().stream().flatMap(List::stream)
 				.collect(Collectors.groupingBy(impression -> impression.regTime(), TreeMap::new, Collectors.toList()));
@@ -52,7 +52,7 @@ public class CampaignMetricsServiceImpl implements CampaignMetricsService {
 			int eventCount = dataStore.getEventsOfUidsAndTypes(uids, eventTypes).size();
 			double ctr = impressionsCount == 0 ? 0.0 : 100.0 * clickCount / impressionsCount;
 			double evpm = impressionsCount == 0 ? 0.0 : 1000.0 * eventCount / impressionsCount;
-			result.add(new StatisticsByDateDto(date, ctr, evpm));
+			result.add(new StatisticsByDateDto(date, impressionsCount, ctr, evpm));
 		}
 
 		return result;

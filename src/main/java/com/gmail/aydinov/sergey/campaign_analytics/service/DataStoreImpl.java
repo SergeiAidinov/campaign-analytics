@@ -47,7 +47,6 @@ public class DataStoreImpl implements DataStore {
 	                throw new IllegalArgumentException("Impressions file is empty");
 	            }
 	            impressionsByDate = csvParserService.parseImpressions(file);;
-	            System.out.println("Loaded impressions: " + impressionsByDate.size());
 	        } catch (Exception e) {
 	            throw new RuntimeException(e);
 	        } finally {
@@ -69,7 +68,6 @@ public class DataStoreImpl implements DataStore {
 	                throw new IllegalArgumentException("Events file is empty");
 	            }
 	            eventsByUid =csvParserService.parseEvents(file);;
-	            System.out.println("Loaded events: " + eventsByUid.size());
 	        } catch (Exception e) {
 	            throw new RuntimeException(e);
 	        } finally {

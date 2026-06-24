@@ -24,7 +24,7 @@ public class CsvParserService {
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public TreeMap<LocalDate, List<Impression>> parseImpressions(MultipartFile file) throws Exception {
-
+    	int impressionsQuantity = 0;
         TreeMap<LocalDate, List<Impression>> impressions = new TreeMap<>();
 
         try (CSVReader reader = new CSVReader(
@@ -56,14 +56,16 @@ public class CsvParserService {
                 impressions
                         .computeIfAbsent(impression.regTime(), k -> new ArrayList<>())
                         .add(impression);
+                impressionsQuantity++;
             }
         }
-
+        System.out.println("Impressions loaded: " + impressionsQuantity);
         return impressions;
     }
 
     public Map<String, List<Event>> parseEvents(MultipartFile file) throws Exception {
         Map<String, List<Event>> eventsByUid = new HashMap<>();
+        int eventsQuantity = 0;
         try (CSVReader reader = new CSVReader(
                 new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
             reader.readNext(); // header
@@ -80,8 +82,10 @@ public class CsvParserService {
                 eventsByUid
                         .computeIfAbsent(uid, ignored -> new ArrayList<>())
                         .add(event);
+                eventsQuantity++;
             }
         }
+        System.out.println("Events loaded: " + eventsQuantity);
         return eventsByUid;
     }
 }
