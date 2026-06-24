@@ -25,84 +25,36 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping("/api/campaign")
 public class AnalyticsController {
 
-    private final CampaignMetricsService service;
+	private final CampaignMetricsService service;
 
-    public AnalyticsController(CampaignMetricsService service) {
-        this.service = service;
-    }
+	public AnalyticsController(CampaignMetricsService service) {
+		this.service = service;
+	}
 
-    @GetMapping("/metrics")
-    @Operation(summary = "График метрик по времени")
-    public ResponseEntity<List<MetricsByDateDto>> getTimeSeries(
-    		
-            @Parameter(
-                    description = "Типы событий. Возможные значения: content, fclick, misc, registration, signup, vcontent, vlead, vregistration, vmisc, vsignup",
-                    array = @ArraySchema(
-                            schema = @io.swagger.v3.oas.annotations.media.Schema(
-                                    implementation = String.class
-                            )
-                    )
-            )
-            @RequestParam(required = false)
-            List<EventType> eventTypes,
+	@GetMapping("/metrics")
+	@Operation(summary = "График метрик по времени")
+	public ResponseEntity<List<MetricsByDateDto>> getTimeSeries(
+			@Parameter(description = "Типы событий. Возможные значения: content, fclick, misc, registration, signup, vcontent, vlead, vregistration, vmisc, vsignup", array = @ArraySchema(schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = String.class))) @RequestParam(required = false) List<EventType> eventTypes,
+			@Parameter(description = "Начальная дата", example = "2021-07-21") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+			@Parameter(description = "Конечная дата", example = "2021-08-09") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+		return ResponseEntity.ok(service.getTimeSeries(eventTypes, from, to));
+	}
 
-            @Parameter(
-            	    description = "Начальная дата",
-            	    example = "2021-07-21"
-            	)
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-            LocalDate from,
+	@Operation(summary = "Агрегация по mm_dma")
+	@GetMapping("/aggregation/mm-dma")
+	public ResponseEntity<List<AggregationDto>> getMmDmaAggregation(
+			@Parameter(description = "Типы событий. Возможные значения: content, fclick, misc, registration, signup, vcontent, vlead, vregistration, vmisc, vsignup", array = @ArraySchema(schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = String.class))) @RequestParam(required = false) List<EventType> eventTypes,
+			@Parameter(description = "Начальная дата", example = "2021-07-21") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+			@Parameter(description = "Конечная дата", example = "2021-08-09") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+		return ResponseEntity.ok(service.getAggregationByMmDma(eventTypes, from, to));
+	}
 
-            @Parameter(
-            	    description = "Конечная дата",
-            	    example = "2021-08-09"
-            	)
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-            LocalDate to
-    ) {
-    	
-    	System.out.println(eventTypes);
-    	
-        return ResponseEntity.ok(
-                service.getTimeSeries(eventTypes, from, to)
-        );
-    }
-
-    @Operation(summary = "Агрегация по mm_dma")
-    @GetMapping("/aggregation/mm-dma")
-    public ResponseEntity<List<AggregationDto>> getMmDmaAggregation(
-    		@Parameter(
-                    description = "Типы событий. Возможные значения: content, fclick, misc, registration, signup, vcontent, vlead, vregistration, vmisc, vsignup",
-                    array = @ArraySchema(
-                            schema = @io.swagger.v3.oas.annotations.media.Schema(
-                                    implementation = String.class
-                            )
-                    )
-            )
-            @RequestParam(required = false) List<EventType> eventTypes,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
-
-        return ResponseEntity.ok(service.getAggregationByMmDma(eventTypes, from, to));
-    }
-
-    @Operation(summary = "Агрегация по site_id")
-    @GetMapping("/aggregation/site-id")
-    public ResponseEntity<List<AggregationDto>> getSiteIdAggregation(
-    		@Parameter(
-                    description = "Типы событий. Возможные значения: content, fclick, misc, registration, signup, vcontent, vlead, vregistration, vmisc, vsignup",
-                    array = @ArraySchema(
-                            schema = @io.swagger.v3.oas.annotations.media.Schema(
-                                    implementation = String.class
-                            )
-                    )
-            )
-            @RequestParam(required = false) List<EventType> eventTypes,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
-
-        return ResponseEntity.ok(service.getAggregationBySiteId(eventTypes, from, to));
-    }
+	@Operation(summary = "Агрегация по site_id")
+	@GetMapping("/aggregation/site-id")
+	public ResponseEntity<List<AggregationDto>> getSiteIdAggregation(
+			@Parameter(description = "Типы событий. Возможные значения: content, fclick, misc, registration, signup, vcontent, vlead, vregistration, vmisc, vsignup", array = @ArraySchema(schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = String.class))) @RequestParam(required = false) List<EventType> eventTypes,
+			@Parameter(description = "Начальная дата", example = "2021-07-21") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+			@Parameter(description = "Конечная дата", example = "2021-08-09") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+		return ResponseEntity.ok(service.getAggregationBySiteId(eventTypes, from, to));
+	}
 }
