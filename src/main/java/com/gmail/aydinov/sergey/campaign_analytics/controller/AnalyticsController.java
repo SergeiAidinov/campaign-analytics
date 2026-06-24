@@ -73,6 +73,14 @@ public class AnalyticsController {
     @Operation(summary = "Агрегация по mm_dma")
     @GetMapping("/aggregation/mm-dma")
     public ResponseEntity<List<AggregationDto>> getMmDmaAggregation(
+    		@Parameter(
+                    description = "Типы событий. Возможные значения: content, fclick, misc, registration, signup, vcontent, vlead, vregistration, vmisc, vsignup",
+                    array = @ArraySchema(
+                            schema = @io.swagger.v3.oas.annotations.media.Schema(
+                                    implementation = String.class
+                            )
+                    )
+            )
             @RequestParam(required = false) List<EventType> eventTypes,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
@@ -83,6 +91,14 @@ public class AnalyticsController {
     @Operation(summary = "Агрегация по site_id")
     @GetMapping("/aggregation/site-id")
     public ResponseEntity<List<AggregationDto>> getSiteIdAggregation(
+    		@Parameter(
+                    description = "Типы событий. Возможные значения: content, fclick, misc, registration, signup, vcontent, vlead, vregistration, vmisc, vsignup",
+                    array = @ArraySchema(
+                            schema = @io.swagger.v3.oas.annotations.media.Schema(
+                                    implementation = String.class
+                            )
+                    )
+            )
             @RequestParam(required = false) List<EventType> eventTypes,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {

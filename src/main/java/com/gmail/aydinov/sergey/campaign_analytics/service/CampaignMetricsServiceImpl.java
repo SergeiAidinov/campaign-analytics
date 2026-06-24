@@ -16,7 +16,6 @@ import com.gmail.aydinov.sergey.campaign_analytics.dto.AggregationDto;
 import com.gmail.aydinov.sergey.campaign_analytics.dto.MetricsByDateDto;
 import com.gmail.aydinov.sergey.campaign_analytics.interfaces.CampaignMetricsService;
 import com.gmail.aydinov.sergey.campaign_analytics.interfaces.DataStore;
-import com.gmail.aydinov.sergey.campaign_analytics.model.Event;
 import com.gmail.aydinov.sergey.campaign_analytics.model.EventType;
 import com.gmail.aydinov.sergey.campaign_analytics.model.Impression;
 
@@ -60,57 +59,117 @@ public class CampaignMetricsServiceImpl implements CampaignMetricsService {
 
 	@Override
 	public List<AggregationDto> getAggregationByMmDma(List<EventType> eventTypes, LocalDate from, LocalDate to) {
-		// TODO Auto-generated method stub
-		return null;
+
+	    SortedMap<LocalDate, List<Impression>> selectedImpressions =
+	            dataStore.getAllImpressions()
+	                    .subMap(from, to.plusDays(1));
+
+	    Map<String, List<Impression>> impressionsByMmDma =
+	            selectedImpressions.values().stream()
+	                    .flatMap(List::stream)
+	                    .collect(Collectors.groupingBy(Impression::mmDma));
+
+	    List<AggregationDto> result = new ArrayList<>();
+
+	    for (Entry<String, List<Impression>> entry : impressionsByMmDma.entrySet()) {
+
+	        String mmDma = entry.getKey();
+	        List<Impression> impressions = entry.getValue();
+
+	        int impressionsCount = impressions.size();
+
+	        Set<String> uids = impressions.stream()
+	                .map(Impression::uid)
+	                .collect(Collectors.toSet());
+
+	        int clickCount = dataStore.getEventsOfUidsAndTypes(
+	                uids,
+	                List.of(EventType.fclick)
+	        ).size();
+
+	        int eventCount = dataStore.getEventsOfUidsAndTypes(
+	                uids,
+	                eventTypes
+	        ).size();
+
+	        double ctr = impressionsCount == 0
+	                ? 0.0
+	                : 100.0 * clickCount / impressionsCount;
+
+	        double evpm = impressionsCount == 0
+	                ? 0.0
+	                : 1000.0 * eventCount / impressionsCount;
+
+	        result.add(
+	                new AggregationDto(
+	                        mmDma,
+	                        impressionsCount,
+	                        ctr,
+	                        evpm
+	                )
+	        );
+	    }
+
+	    return result;
 	}
 
 	@Override
-	public List<AggregationDto> getAggregationBySiteId(List<EventType> eventTypes, LocalDate from, LocalDate to) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+	public List<AggregationDto> getAggregationBySiteId(
+	        List<EventType> eventTypes,
+	        LocalDate from,
+	        LocalDate to) {
 
-	private String normalize(EventType type) {
-		if (type == null)
-			return null;
+	    SortedMap<LocalDate, List<Impression>> selectedImpressions =
+	            dataStore.getAllImpressions()
+	                    .subMap(from, to.plusDays(1));
 
-		String name = type.name();
+	    Map<String, List<Impression>> impressionsBySiteId =
+	            selectedImpressions.values().stream()
+	                    .flatMap(List::stream)
+	                    .collect(Collectors.groupingBy(Impression::siteId));
 
-		// vregistration → registration
-		if (name.startsWith("v")) {
-			return name.substring(1);
-		}
+	    List<AggregationDto> result = new ArrayList<>();
 
-		return name;
-	}
+	    for (Entry<String, List<Impression>> entry : impressionsBySiteId.entrySet()) {
 
-//		private List<Impression> getFilteredImpressions(LocalDate from, LocalDate to) {
-//		    return dataStore.getAllImpressions().values().stream()
-//		            .filter(i -> {
-//		                LocalDate d = i.regTime().toLocalDate();
-//		                return (from == null || !d.isBefore(from))
-//		                        && (to == null || !d.isAfter(to));
-//		            })
-//		            .toList();
-//		}
+	        String siteId = entry.getKey();
+	        List<Impression> impressions = entry.getValue();
 
-	private List<String> getEventTypesByUid(String uid) {
-		return dataStore.getAllEvents().getOrDefault(uid, List.of()).stream()
-				.map(e -> normalize(EventType.valueOf(e.tag()))).toList();
-	}
+	        int impressionsCount = impressions.size();
 
-	private boolean matchesEventFilter(String uid, List<EventType> eventTypes) {
-		if (eventTypes == null || eventTypes.isEmpty())
-			return true;
+	        Set<String> uids = impressions.stream()
+	                .map(Impression::uid)
+	                .collect(Collectors.toSet());
 
-		return dataStore.getEventsByUid(uid).stream().map(Event::tag).anyMatch(tag -> {
-			try {
-				EventType type = EventType.valueOf(tag);
-				return eventTypes.contains(type);
-			} catch (Exception e) {
-				return false;
-			}
-		});
+	        int clickCount = dataStore.getEventsOfUidsAndTypes(
+	                uids,
+	                List.of(EventType.fclick)
+	        ).size();
+
+	        int eventCount = dataStore.getEventsOfUidsAndTypes(
+	                uids,
+	                eventTypes
+	        ).size();
+
+	        double ctr = impressionsCount == 0
+	                ? 0.0
+	                : 100.0 * clickCount / impressionsCount;
+
+	        double evpm = impressionsCount == 0
+	                ? 0.0
+	                : 1000.0 * eventCount / impressionsCount;
+
+	        result.add(
+	                new AggregationDto(
+	                        siteId,
+	                        impressionsCount,
+	                        ctr,
+	                        evpm
+	                )
+	        );
+	    }
+
+	    return result;
 	}
 
 }
