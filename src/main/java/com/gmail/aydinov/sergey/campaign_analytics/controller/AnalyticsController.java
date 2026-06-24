@@ -1,8 +1,6 @@
 package com.gmail.aydinov.sergey.campaign_analytics.controller;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.format.annotation.DateTimeFormat;
@@ -13,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.gmail.aydinov.sergey.campaign_analytics.dto.AggregationDto;
-import com.gmail.aydinov.sergey.campaign_analytics.dto.StatisticsByDateDto;
+import com.gmail.aydinov.sergey.campaign_analytics.dto.MetricsByDateDto;
 import com.gmail.aydinov.sergey.campaign_analytics.interfaces.CampaignMetricsService;
 import com.gmail.aydinov.sergey.campaign_analytics.model.EventType;
 
@@ -33,9 +31,9 @@ public class AnalyticsController {
         this.service = service;
     }
 
-    @GetMapping("/timeseries")
+    @GetMapping("/metrics")
     @Operation(summary = "График метрик по времени")
-    public ResponseEntity<List<StatisticsByDateDto>> getTimeSeries(
+    public ResponseEntity<List<MetricsByDateDto>> getTimeSeries(
     		
             @Parameter(
                     description = "Типы событий. Возможные значения: content, fclick, misc, registration, signup, vcontent, vlead, vregistration, vmisc, vsignup",
@@ -48,10 +46,18 @@ public class AnalyticsController {
             @RequestParam(required = false)
             List<EventType> eventTypes,
 
+            @Parameter(
+            	    description = "Начальная дата",
+            	    example = "2021-07-21"
+            	)
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate from,
 
+            @Parameter(
+            	    description = "Конечная дата",
+            	    example = "2021-08-09"
+            	)
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate to

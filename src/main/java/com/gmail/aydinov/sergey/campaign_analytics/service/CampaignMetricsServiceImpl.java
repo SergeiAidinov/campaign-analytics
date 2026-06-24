@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.gmail.aydinov.sergey.campaign_analytics.dto.AggregationDto;
-import com.gmail.aydinov.sergey.campaign_analytics.dto.StatisticsByDateDto;
+import com.gmail.aydinov.sergey.campaign_analytics.dto.MetricsByDateDto;
 import com.gmail.aydinov.sergey.campaign_analytics.interfaces.CampaignMetricsService;
 import com.gmail.aydinov.sergey.campaign_analytics.interfaces.DataStore;
 import com.gmail.aydinov.sergey.campaign_analytics.model.Event;
@@ -30,13 +30,13 @@ public class CampaignMetricsServiceImpl implements CampaignMetricsService {
 	}
 
 	@Override
-	public List<StatisticsByDateDto> getTimeSeries(List<EventType> eventTypes, LocalDate from, LocalDate to) {
+	public List<MetricsByDateDto> getTimeSeries(List<EventType> eventTypes, LocalDate from, LocalDate to) {
 		
 		SortedMap<LocalDate, List<Impression>> selectedImpressions = dataStore.getAllImpressions().subMap(from, to.plusDays(1));
 		
 		Map<LocalDate, List<Impression>> impressionsByDay = selectedImpressions.values().stream().flatMap(List::stream)
 				.collect(Collectors.groupingBy(impression -> impression.regTime(), TreeMap::new, Collectors.toList()));
-		List<StatisticsByDateDto> result = new ArrayList<>();
+		List<MetricsByDateDto> result = new ArrayList<>();
 		
 		for (Entry<LocalDate, List<Impression>> entry : impressionsByDay.entrySet()) {
 			LocalDate date = entry.getKey();
@@ -52,7 +52,7 @@ public class CampaignMetricsServiceImpl implements CampaignMetricsService {
 			int eventCount = dataStore.getEventsOfUidsAndTypes(uids, eventTypes).size();
 			double ctr = impressionsCount == 0 ? 0.0 : 100.0 * clickCount / impressionsCount;
 			double evpm = impressionsCount == 0 ? 0.0 : 1000.0 * eventCount / impressionsCount;
-			result.add(new StatisticsByDateDto(date, impressionsCount, ctr, evpm));
+			result.add(new MetricsByDateDto(date, impressionsCount, ctr, evpm));
 		}
 
 		return result;
