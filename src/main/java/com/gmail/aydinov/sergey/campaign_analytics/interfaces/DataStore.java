@@ -1,10 +1,8 @@
 package com.gmail.aydinov.sergey.campaign_analytics.interfaces;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.CompletableFuture;
@@ -24,8 +22,6 @@ public interface DataStore {
 	SortedMap<LocalDate, List<Impression>> getAllImpressions();
 
 	Map<String, List<Event>> getAllEvents();
-
-//	Optional<Impression> getImpressionByUid(String uid);
 
 	List<Event> getEventsByUid(String uid);
 	

@@ -1,21 +1,21 @@
 package com.gmail.aydinov.sergey.campaign_analytics.service;
 
-import com.gmail.aydinov.sergey.campaign_analytics.model.Event;
-import com.gmail.aydinov.sergey.campaign_analytics.model.Impression;
-import com.opencsv.CSVReader;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.gmail.aydinov.sergey.campaign_analytics.model.Event;
+import com.gmail.aydinov.sergey.campaign_analytics.model.Impression;
+import com.opencsv.CSVReader;
 
 @Service
 public class CsvParserService {
