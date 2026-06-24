@@ -1,6 +1,8 @@
 package com.gmail.aydinov.sergey.campaign_analytics.controller;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.format.annotation.DateTimeFormat;
@@ -11,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.gmail.aydinov.sergey.campaign_analytics.dto.AggregationDto;
-import com.gmail.aydinov.sergey.campaign_analytics.dto.TimeSeriesDto;
+import com.gmail.aydinov.sergey.campaign_analytics.dto.StatisticsByDateDto;
 import com.gmail.aydinov.sergey.campaign_analytics.interfaces.CampaignMetricsService;
 import com.gmail.aydinov.sergey.campaign_analytics.model.EventType;
 
@@ -33,7 +35,7 @@ public class AnalyticsController {
 
     @GetMapping("/timeseries")
     @Operation(summary = "График метрик по времени")
-    public ResponseEntity<List<TimeSeriesDto>> getTimeSeries(
+    public ResponseEntity<List<StatisticsByDateDto>> getTimeSeries(
     		
             @Parameter(
                     description = "Типы событий. Возможные значения: content, fclick, misc, registration, signup, vcontent, vlead, vregistration, vmisc, vsignup",
@@ -56,6 +58,7 @@ public class AnalyticsController {
     ) {
     	
     	System.out.println(eventTypes);
+    	
         return ResponseEntity.ok(
                 service.getTimeSeries(eventTypes, from, to)
         );

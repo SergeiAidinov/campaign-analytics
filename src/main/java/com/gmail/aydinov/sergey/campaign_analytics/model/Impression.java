@@ -1,10 +1,10 @@
 package com.gmail.aydinov.sergey.campaign_analytics.model;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 public record Impression(
 	    String uid,
-	    LocalDateTime regTime,
+	    LocalDate regTime,
 	    int fcImpChk,
 	    int fcTimeChk,
 	    int utmtr,

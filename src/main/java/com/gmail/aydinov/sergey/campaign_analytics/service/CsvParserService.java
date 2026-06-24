@@ -8,12 +8,14 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 @Service
 public class CsvParserService {
@@ -21,20 +23,26 @@ public class CsvParserService {
     private final DateTimeFormatter formatter =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    public Map<String, Impression> parseImpressions(MultipartFile file) throws Exception {
-        Map<String, Impression> impressions = new HashMap<>();
+    public TreeMap<LocalDate, List<Impression>> parseImpressions(MultipartFile file) throws Exception {
+
+        TreeMap<LocalDate, List<Impression>> impressions = new TreeMap<>();
+
         try (CSVReader reader = new CSVReader(
                 new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
+
             reader.readNext(); // header
+
             String[] line;
+
             while ((line = reader.readNext()) != null) {
+
                 if (line.length < 10) {
                     continue;
                 }
-                String uid = line[1].trim();
+
                 Impression impression = new Impression(
-                        uid,
-                        LocalDateTime.parse(line[0].trim(), formatter),
+                        line[1].trim(),
+                        LocalDate.parse(line[0].trim(), formatter),
                         Integer.parseInt(line[2]),
                         Integer.parseInt(line[3]),
                         Integer.parseInt(line[4]),
@@ -44,9 +52,13 @@ public class CsvParserService {
                         line[8].trim(),
                         line[9].trim()
                 );
-                impressions.put(uid, impression);
+
+                impressions
+                        .computeIfAbsent(impression.regTime(), k -> new ArrayList<>())
+                        .add(impression);
             }
         }
+
         return impressions;
     }
 

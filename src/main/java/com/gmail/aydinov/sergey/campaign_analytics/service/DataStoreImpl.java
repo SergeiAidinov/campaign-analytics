@@ -1,11 +1,15 @@
 package com.gmail.aydinov.sergey.campaign_analytics.service;
 
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
@@ -13,12 +17,13 @@ import org.springframework.web.multipart.MultipartFile;
 import com.gmail.aydinov.sergey.campaign_analytics.exception.DataNotReadyException;
 import com.gmail.aydinov.sergey.campaign_analytics.interfaces.DataStore;
 import com.gmail.aydinov.sergey.campaign_analytics.model.Event;
+import com.gmail.aydinov.sergey.campaign_analytics.model.EventType;
 import com.gmail.aydinov.sergey.campaign_analytics.model.Impression;
 
 @Component
 public class DataStoreImpl implements DataStore {
 
-	private volatile Map<String, Impression> impressionsByUid = Map.of();
+	private volatile SortedMap<LocalDate, List<Impression>> impressionsByDate = new TreeMap<LocalDate, List<Impression>>();
 	private volatile Map<String, List<Event>> eventsByUid = Map.of();
 	
 	private final CsvParserService csvParserService;
@@ -41,8 +46,8 @@ public class DataStoreImpl implements DataStore {
 	            if (file.isEmpty()) {
 	                throw new IllegalArgumentException("Impressions file is empty");
 	            }
-	            impressionsByUid =csvParserService.parseImpressions(file);;
-	            System.out.println("Loaded impressions: " + impressionsByUid.size());
+	            impressionsByDate = csvParserService.parseImpressions(file);;
+	            System.out.println("Loaded impressions: " + impressionsByDate.size());
 	        } catch (Exception e) {
 	            throw new RuntimeException(e);
 	        } finally {
@@ -73,17 +78,17 @@ public class DataStoreImpl implements DataStore {
 	    });
 	}
 
-	public Map<String, Impression> getAllImpressions() {
-	    return Collections.unmodifiableMap(impressionsByUid);
+	public SortedMap<LocalDate, List<Impression>> getAllImpressions() {
+	    return impressionsByDate;
 	}
 
 	public Map<String, List<Event>> getAllEvents() {
 	    return Collections.unmodifiableMap(eventsByUid);
 	}
 
-	public Optional<Impression> getImpressionByUid(String uid) {
-	    return Optional.ofNullable(impressionsByUid.get(uid));
-	}
+//	public Optional<Impression> getImpressionByUid(String uid) {
+//	    return Optional.ofNullable(impressionsByUid.get(uid));
+//	}
 
 	public List<Event> getEventsByUid(String uid) {
 	    return eventsByUid.getOrDefault(uid, List.of());
@@ -92,7 +97,23 @@ public class DataStoreImpl implements DataStore {
 	public boolean isReady() {
 	    return !impressionsLoading.get()
 	            && !eventsLoading.get()
-	            && !impressionsByUid.isEmpty()
+	            && !impressionsByDate.isEmpty()
 	            && !eventsByUid.isEmpty();
 	}
+
+	@Override
+	public List<Event> getEventsOfUidsAndTypes(Set<String> uids, List<EventType> types) {
+	    
+		Set<String> typeSet = types.stream()
+	            .map(EventType::name)
+	            .collect(Collectors.toSet());
+	    
+		return eventsByUid.entrySet().stream()
+	            .filter(entry -> uids.contains(entry.getKey()))
+	            .flatMap(entry -> entry.getValue().stream())
+	            .filter(event -> typeSet.contains(event.tag()))
+	            .toList();
+	}
+
+	
 }
